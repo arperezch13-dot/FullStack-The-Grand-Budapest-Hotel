@@ -21,7 +21,7 @@ El proyecto está compuesto por:
 Desde la raíz del proyecto:
 
 ```bash
-npm install
+npm install --legacy-peer-deps
 ```
 
 Para usar la API local, crea un archivo `.env` en la raíz:
