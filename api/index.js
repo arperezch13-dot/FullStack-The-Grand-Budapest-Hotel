@@ -1,34 +1,12 @@
-/**
- * api/index.js — Servidor Express + MongoDB Atlas (driver oficial "mongodb").
- * Base de datos "GHBudapestRoom", colección "Rooms".
- *
- * Estructura (la misma que en clase):
- *   1. Configuración y conexión
- *   2. Middlewares: validateId, useCollection y validateRoom
- *   3. Factory createRouterCrud: crea un CRUD completo para una colección
- *   4. Rutas: /api/rooms
- *   5. Middleware de errores globales
- *   6. initServer / closeServer
- *
- * Rutas:
- *   GET    /api/rooms        → lista todas las habitaciones
- *   POST   /api/rooms        → crea una habitación
- *   PUT    /api/rooms/:id    → modifica una habitación
- *   DELETE /api/rooms/:id    → borra una habitación
- *
- * La conexión se lee de la variable MONGODB_URI:
- *   - en local, del archivo .env (que NO se sube a GitHub: está en .gitignore)
- *   - al publicar, de las variables de entorno del servicio (Vercel: Settings → Environment Variables)
- *
- * Se arranca con "npm run api" y abre el puerto PORT (3001 por defecto).
- */
+/* Base de datos "GHBudapestRoom", colección "Rooms" */
+
 import 'dotenv/config';
 import dns from 'node:dns';
 // Algunas redes rechazan la consulta DNS de mongodb+srv: se usa el DNS de Google
 dns.setServers(['8.8.8.8', '1.1.1.1']);
 import express from 'express';
 import { MongoClient, ObjectId } from 'mongodb';
-// ---------- 1. Configuración y conexión ----------
+//  1. Configuración y conexión 
 const port = Number(process.env.PORT) || 3001;
 const DB_NAME = 'GHBudapestRoom';
 // Nombre de la colección de la base de datos
@@ -37,7 +15,7 @@ const collections = {
 };
 let client = null;
 let dbPromise = null;
-/** Conecta con MongoDB una sola vez y reutiliza la conexión (se reutiliza entre peticiones). */
+/* Conecta con MongoDB una sola vez y reutiliza la conexión */
 function connectDb() {
     if (!dbPromise) {
         const uri = process.env.MONGODB_URI;
@@ -69,7 +47,7 @@ app.use((req, res, next) => {
     }
     next();
 });
-// ---------- 2. Middlewares ----------
+//  2. Middlewares 
 // MIDDLEWARE PARA VALIDAR OBJECT ID
 const validateId = (req, res, next) => {
     const { id } = req.params;
@@ -112,7 +90,7 @@ const validateRoom = (req, res, next) => {
         res.status(400).json({ success: false, error });
         return;
     }
-    // Solo se guardan los campos esperados (el resto del body se descarta)
+    // Solo se guardan los campos esperados 
     req.body = {
         slug: String(data.slug).trim(),
         name: String(data.name).trim(),
@@ -177,13 +155,13 @@ const createRouterCrud = (nameResource, nameCollection, validateBody) => {
     });
     return router;
 };
-// ---------- 4. Rutas: se monta un CRUD por colección ----------
+// 4. Rutas: se monta un CRUD por colección 
 app.use('/api/rooms', createRouterCrud('Habitación', collections.rooms, validateRoom));
 // Cualquier otra ruta /api/... que no exista
 app.use('/api', (_req, res) => {
     res.status(404).json({ success: false, error: 'Ruta no encontrada' });
 });
-// ---------- 5. Middleware de errores globales ----------
+// 5. Middleware de errores globales 
 app.use((err, _req, res, next) => {
     console.error('Error no controlado:', err.message);
     if (res.headersSent) {
@@ -192,7 +170,7 @@ app.use((err, _req, res, next) => {
     }
     res.status(err.statusCode || 500).json({ success: false, error: err.message || 'Error interno del Server' });
 });
-// ---------- 6. Arranque y cierre del servidor ----------
+// 6. Arranque y cierre del servidor
 // Levanta el servidor + inicializa la base de datos (solo en local)
 const initServer = async () => {
     try {
@@ -209,7 +187,7 @@ const initServer = async () => {
         process.exit(1);
     }
 };
-// Cierra la conexión con MongoDB al parar el servidor (Ctrl + C)
+// Cierra la conexión con MongoDB al parar el servidor 
 const closeServer = async (signal) => {
     try {
         await client?.close();
@@ -225,5 +203,5 @@ process.on('SIGINT', () => closeServer('SIGINT'));
 process.on('SIGTERM', () => closeServer('SIGTERM'));
 initServer();
 
-// Vercel necesita encontrar "app" para ejecutar el servidor
+
 export default app;
